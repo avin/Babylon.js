@@ -7,7 +7,16 @@ import { IPlaneLike } from './math.like';
 import { _TypeStore } from '../Misc/typeStore';
 import { Plane } from './math.plane';
 import { PerformanceConfigurator } from "../Engines/performanceConfigurator";
-import { byRefFunc } from "helpers";
+
+/**
+ * Get result using toRef function
+ * @param func defines an original toRef function
+ * @param ref defines ref value
+ * @param args defines original function params
+ */
+function byRefFunc<T>(func: Function, ref: any, ...args: any[]): T {
+    return func.apply(args, ref);
+}
 
 /**
  * Class representing a vector containing 2 coordinates
@@ -984,10 +993,7 @@ export class Vector3 {
      * @returns the current updated Vector3
      */
     public scaleInPlace(scale: number): Vector3 {
-        this.x *= scale;
-        this.y *= scale;
-        this.z *= scale;
-        return this;
+        return byRefFunc<Vector3>(this.scaleToRef, this, arguments);
     }
 
     /**
@@ -1012,11 +1018,11 @@ export class Vector3 {
     /**
      * Scale the current Vector3 values by a factor and add the result to a given Vector3
      * @param scale defines the scale factor
-     * @param result defines the Vector3 object where to store the result
-     * @returns the unmodified current Vector3
+     * @param ref defines the Vector3 object where to store the result
+     * @returns ref
      */
-    public scaleAndAddToRef(scale: number, result: Vector3): Vector3 {
-        return result.addInPlaceFromFloats(this._x * scale, this._y * scale, this._z * scale);
+    public scaleAndAddToRef(scale: number, ref: Vector3): Vector3 {
+        return ref.addInPlaceFromFloats(this._x * scale, this._y * scale, this._z * scale);
     }
 
     /**
@@ -1093,10 +1099,7 @@ export class Vector3 {
      * @returns the current updated Vector3
      */
     public multiplyInPlace(otherVector: DeepImmutable<Vector3>): Vector3 {
-        this.x *= otherVector._x;
-        this.y *= otherVector._y;
-        this.z *= otherVector._z;
-        return this;
+        return byRefFunc<Vector3>(this.multiplyToRef, this, arguments);
     }
 
     /**
@@ -1951,15 +1954,15 @@ export class Vector3 {
     }
 
     /** @hidden */
-    public static _UnprojectFromInvertedMatrixToRef(source: DeepImmutable<Vector3>, matrix: DeepImmutable<Matrix>, result: Vector3): Vector3 {
-        Vector3.TransformCoordinatesToRef(source, matrix, result);
+    public static _UnprojectFromInvertedMatrixToRef(source: DeepImmutable<Vector3>, matrix: DeepImmutable<Matrix>, ref: Vector3): Vector3 {
+        Vector3.TransformCoordinatesToRef(source, matrix, ref);
         const m = matrix.m;
         var num = source._x * m[3] + source._y * m[7] + source._z * m[11] + m[15];
         if (Scalar.WithinEpsilon(num, 1.0)) {
-            result.scaleInPlace(1.0 / num);
+            ref.scaleInPlace(1.0 / num);
         }
 
-        return result;
+        return ref;
     }
 
     /**
@@ -4040,7 +4043,7 @@ export class Matrix {
     public invertToRef(ref: Matrix): Matrix {
         if (this._isIdentity) {
             Matrix.IdentityToRef(ref);
-            return this;
+            return ref;
         }
 
         // the inverse of a Matrix is the transpose of cofactor matrix divided by the determinant
@@ -4538,7 +4541,7 @@ export class Matrix {
             ref._m[index] += this._m[index] * scale;
         }
         ref._markAsUpdated();
-        return this;
+        return ref;
     }
 
     /**
@@ -4571,14 +4574,14 @@ export class Matrix {
 
     /**
      * Extracts the rotation matrix from the current one and sets it as the given "result"
-     * @param result defines the target matrix to store data to
-     * @returns the current matrix
+     * @param ref defines the target matrix to store data to
+     * @returns ref
      */
-    public getRotationMatrixToRef(result: Matrix): Matrix {
+    public getRotationMatrixToRef(ref: Matrix): Matrix {
         const scale = MathTmp.Vector3[0];
         if (!this.decompose(scale)) {
-            Matrix.IdentityToRef(result);
-            return this;
+            Matrix.IdentityToRef(ref);
+            return ref;
         }
 
         const m = this._m;
@@ -4588,9 +4591,9 @@ export class Matrix {
             m[4] * sy, m[5] * sy, m[6] * sy, 0.0,
             m[8] * sz, m[9] * sz, m[10] * sz, 0.0,
             0.0, 0.0, 0.0, 1.0,
-            result
+            ref
         );
-        return this;
+        return ref;
     }
 
     /**
@@ -4688,22 +4691,23 @@ export class Matrix {
      * @param initialM42 defines 2nd value of 4th row
      * @param initialM43 defines 3rd value of 4th row
      * @param initialM44 defines 4th value of 4th row
-     * @param result defines the target matrix
+     * @param ref defines the target matrix
+     * @returns ref
      */
     public static FromValuesToRef(initialM11: number, initialM12: number, initialM13: number, initialM14: number,
         initialM21: number, initialM22: number, initialM23: number, initialM24: number,
         initialM31: number, initialM32: number, initialM33: number, initialM34: number,
-        initialM41: number, initialM42: number, initialM43: number, initialM44: number, result: Matrix): Matrix {
+        initialM41: number, initialM42: number, initialM43: number, initialM44: number, ref: Matrix): Matrix {
 
-        const m = result._m;
+        const m = ref._m;
         m[0] = initialM11; m[1] = initialM12; m[2] = initialM13; m[3] = initialM14;
         m[4] = initialM21; m[5] = initialM22; m[6] = initialM23; m[7] = initialM24;
         m[8] = initialM31; m[9] = initialM32; m[10] = initialM33; m[11] = initialM34;
         m[12] = initialM41; m[13] = initialM42; m[14] = initialM43; m[15] = initialM44;
 
-        result._markAsUpdated();
+        ref._markAsUpdated();
 
-        return result;
+        return ref;
     }
 
     /**

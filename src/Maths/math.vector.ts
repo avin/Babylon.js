@@ -14,8 +14,10 @@ import { PerformanceConfigurator } from "../Engines/performanceConfigurator";
  * @param ref defines ref value
  * @param args defines original function params
  */
-function byRefFunc<T>(func: Function, ref: any, ...args: any[]): T {
-    return func.apply(args, ref);
+function byRefFunc<T>(func: Function, ref: any, args: IArguments): T {
+    const argsArr = Array.from(args);
+    argsArr.push(ref);
+    return func.apply(null, args);
 }
 
 /**
